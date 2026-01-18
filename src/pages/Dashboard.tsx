@@ -50,7 +50,7 @@ export default function Dashboard() {
         />
         <StatsCard
           title="Sua Posição"
-          value={`#${user?.rank || 1}`}
+          value={`#${user?.rank ?? 1}`}
           icon={<Target className="w-5 h-5 text-primary-foreground" />}
           variant="accent"
         />

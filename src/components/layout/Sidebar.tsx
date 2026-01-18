@@ -84,11 +84,11 @@ export function Sidebar() {
       >
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
-          <h1 className="text-xl font-display font-bold text-gradient-primary">
-            SalesTraining
+          <h1 className="text-lg font-display font-bold text-gradient-primary">
+            ACADEMIA DE TREINAMENTO
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            Plataforma de Treinamento
+            Plataforma de Capacitação
           </p>
         </div>
 
