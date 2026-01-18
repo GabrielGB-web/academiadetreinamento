@@ -1,22 +1,27 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, CheckCircle2, Award } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Award, Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { mockCourses } from '@/data/mockData';
 import { cn } from '@/lib/utils';
-import { Lesson as LessonType, Question } from '@/types';
+import { Lesson as LessonType } from '@/types';
+import { useLessonProgress } from '@/hooks/useLessonProgress';
+import { toast } from 'sonner';
 
 export default function Lesson() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
+  const { markAsCompleted, saveQuizScore, isLessonCompleted } = useLessonProgress();
+  
   const [showQuiz, setShowQuiz] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Find lesson in courses
   let lesson: LessonType | undefined;
@@ -45,8 +50,27 @@ export default function Lesson() {
     );
   }
 
+  const isCompleted = lessonId ? isLessonCompleted(lessonId) : false;
   const quiz = lesson.quiz;
   const questions = quiz?.questions || [];
+
+  const handleMarkAsCompleted = async () => {
+    if (!lessonId) return;
+    
+    setIsSaving(true);
+    const success = await markAsCompleted(lessonId);
+    setIsSaving(false);
+    
+    if (success) {
+      toast.success('Aula marcada como concluída!', {
+        description: 'Seu progresso foi salvo.',
+      });
+    } else {
+      toast.error('Erro ao salvar progresso', {
+        description: 'Tente novamente.',
+      });
+    }
+  };
 
   const handleAnswerSelect = (optionIndex: number) => {
     if (isAnswered) return;
@@ -66,13 +90,23 @@ export default function Lesson() {
       setIsAnswered(false);
     } else {
       setShowResult(true);
+      // Save quiz result
+      if (lessonId && quiz) {
+        const score = calculateScoreInternal();
+        const percentage = Math.round((score / questions.length) * 100);
+        saveQuizScore(lessonId, percentage);
+      }
     }
   };
 
-  const calculateScore = () => {
+  const calculateScoreInternal = () => {
     return questions.reduce((acc, q, i) => {
       return acc + (answers[i] === q.correctOption ? 1 : 0);
     }, 0);
+  };
+
+  const calculateScore = () => {
+    return calculateScoreInternal();
   };
 
   const scorePercentage = Math.round((calculateScore() / questions.length) * 100);
@@ -296,10 +330,31 @@ export default function Lesson() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-4 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-          <Button variant="success" size="lg">
-            <CheckCircle2 className="w-5 h-5 mr-2" />
-            Marcar como Concluída
-          </Button>
+          {isCompleted ? (
+            <Button variant="outline" size="lg" disabled className="text-success border-success">
+              <CheckCircle2 className="w-5 h-5 mr-2" />
+              Aula Concluída
+            </Button>
+          ) : (
+            <Button 
+              variant="success" 
+              size="lg" 
+              onClick={handleMarkAsCompleted}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  Marcar como Concluída
+                </>
+              )}
+            </Button>
+          )}
           
           {quiz && (
             <Button variant="gradient" size="lg" onClick={() => setShowQuiz(true)}>
