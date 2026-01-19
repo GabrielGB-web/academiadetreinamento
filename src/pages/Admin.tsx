@@ -5,10 +5,10 @@ import {
   FileText, 
   Users, 
   Video,
-  Edit,
   Trash2,
   Loader2
 } from 'lucide-react';
+import { QuizManager } from '@/components/admin/QuizManager';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -517,16 +517,27 @@ export default function Admin() {
 
                             {/* Lessons list */}
                             {module.lessons.length > 0 && (
-                              <div className="mt-2 pl-4 space-y-1">
+                              <div className="mt-2 pl-4 space-y-2">
                                 {module.lessons.map((lesson) => (
-                                  <div key={lesson.id} className="flex items-center justify-between text-sm py-1">
-                                    <span className="text-muted-foreground">{lesson.title}</span>
-                                    <div className="flex items-center gap-2">
-                                      {lesson.duration && <span className="text-xs text-muted-foreground">{lesson.duration}</span>}
-                                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
-                                        <Trash2 className="w-3 h-3" />
-                                      </Button>
+                                  <div key={lesson.id} className="border-l-2 border-border/50 pl-3">
+                                    <div className="flex items-center justify-between text-sm py-1">
+                                      <div className="flex-1">
+                                        <span className="font-medium">{lesson.title}</span>
+                                        {lesson.description && (
+                                          <p className="text-xs text-muted-foreground line-clamp-1">{lesson.description}</p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {lesson.video_url && (
+                                          <Video className="w-3 h-3 text-primary" />
+                                        )}
+                                        {lesson.duration && <span className="text-xs text-muted-foreground">{lesson.duration}</span>}
+                                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => handleDeleteLesson(lesson.id)}>
+                                          <Trash2 className="w-3 h-3" />
+                                        </Button>
+                                      </div>
                                     </div>
+                                    <QuizManager lessonId={lesson.id} lessonTitle={lesson.title} />
                                   </div>
                                 ))}
                               </div>

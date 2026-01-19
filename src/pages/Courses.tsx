@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { CourseCard } from '@/components/courses/CourseCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockCourses } from '@/data/mockData';
 import { cn } from '@/lib/utils';
+import { useCoursesWithProgress } from '@/hooks/useCoursesWithProgress';
+import { Loader2 } from 'lucide-react';
 
 const categories = ['Todos', 'Vendas', 'Prospecção', 'Soft Skills', 'Tecnologia'];
 const statuses = ['Todos', 'Em Andamento', 'Concluídos', 'Não Iniciados'];
@@ -15,12 +16,15 @@ export default function Courses() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedStatus, setSelectedStatus] = useState('Todos');
+  
+  const { data: courses = [], isLoading } = useCoursesWithProgress();
 
-  const filteredCourses = mockCourses.filter((course) => {
+  const filteredCourses = courses.filter((course) => {
     const matchesSearch = course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       course.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = selectedCategory === 'Todos' || course.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'Todos' || 
+      course.category.toLowerCase() === selectedCategory.toLowerCase();
     
     let matchesStatus = true;
     if (selectedStatus === 'Em Andamento') {
@@ -94,23 +98,33 @@ export default function Courses() {
         </div>
       </div>
 
-      {/* Courses Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCourses.map((course, index) => (
-          <div
-            key={course.id}
-            className="animate-slide-up"
-            style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-          >
-            <CourseCard course={course} />
-          </div>
-        ))}
-      </div>
-
-      {filteredCourses.length === 0 && (
+      {/* Loading State */}
+      {isLoading ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhum curso encontrado.</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground mt-2">Carregando cursos...</p>
         </div>
+      ) : (
+        <>
+          {/* Courses Grid */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredCourses.map((course, index) => (
+              <div
+                key={course.id}
+                className="animate-slide-up"
+                style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+              >
+                <CourseCard course={course} />
+              </div>
+            ))}
+          </div>
+
+          {filteredCourses.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum curso encontrado.</p>
+            </div>
+          )}
+        </>
       )}
     </MainLayout>
   );
