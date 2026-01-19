@@ -54,29 +54,55 @@ export function useLessonProgress() {
 
   // Mark a lesson as completed
   const markAsCompleted = async (lessonId: string): Promise<boolean> => {
-    if (!supabaseUser) return false;
+    if (!supabaseUser) {
+      console.error('No user logged in');
+      return false;
+    }
 
     try {
-      const { error } = await supabase
+      // First check if record exists
+      const { data: existing } = await supabase
         .from('lesson_progress')
-        .upsert({
-          user_id: supabaseUser.id,
-          lesson_id: lessonId,
-          completed: true,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,lesson_id',
-        });
+        .select('id')
+        .eq('user_id', supabaseUser.id)
+        .eq('lesson_id', lessonId)
+        .maybeSingle();
+
+      let error;
+      
+      if (existing) {
+        // Update existing record
+        const result = await supabase
+          .from('lesson_progress')
+          .update({
+            completed: true,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('user_id', supabaseUser.id)
+          .eq('lesson_id', lessonId);
+        error = result.error;
+      } else {
+        // Insert new record
+        const result = await supabase
+          .from('lesson_progress')
+          .insert({
+            user_id: supabaseUser.id,
+            lesson_id: lessonId,
+            completed: true,
+            completed_at: new Date().toISOString(),
+          });
+        error = result.error;
+      }
 
       if (error) {
         console.error('Error marking lesson as completed:', error);
         return false;
       }
 
-      // Update local state
+      // Update local state immediately
       setProgress((prev) => {
-        const existing = prev.find((p) => p.lessonId === lessonId);
-        if (existing) {
+        const existingProgress = prev.find((p) => p.lessonId === lessonId);
+        if (existingProgress) {
           return prev.map((p) =>
             p.lessonId === lessonId
               ? { ...p, completed: true, completedAt: new Date().toISOString() }
@@ -98,30 +124,57 @@ export function useLessonProgress() {
 
   // Save quiz score
   const saveQuizScore = async (lessonId: string, score: number): Promise<boolean> => {
-    if (!supabaseUser) return false;
+    if (!supabaseUser) {
+      console.error('No user logged in');
+      return false;
+    }
 
     try {
-      const { error } = await supabase
+      // First check if record exists
+      const { data: existing } = await supabase
         .from('lesson_progress')
-        .upsert({
-          user_id: supabaseUser.id,
-          lesson_id: lessonId,
-          completed: true,
-          quiz_score: score,
-          completed_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id,lesson_id',
-        });
+        .select('id')
+        .eq('user_id', supabaseUser.id)
+        .eq('lesson_id', lessonId)
+        .maybeSingle();
+
+      let error;
+      
+      if (existing) {
+        // Update existing record
+        const result = await supabase
+          .from('lesson_progress')
+          .update({
+            completed: true,
+            quiz_score: score,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('user_id', supabaseUser.id)
+          .eq('lesson_id', lessonId);
+        error = result.error;
+      } else {
+        // Insert new record
+        const result = await supabase
+          .from('lesson_progress')
+          .insert({
+            user_id: supabaseUser.id,
+            lesson_id: lessonId,
+            completed: true,
+            quiz_score: score,
+            completed_at: new Date().toISOString(),
+          });
+        error = result.error;
+      }
 
       if (error) {
         console.error('Error saving quiz score:', error);
         return false;
       }
 
-      // Update local state
+      // Update local state immediately
       setProgress((prev) => {
-        const existing = prev.find((p) => p.lessonId === lessonId);
-        if (existing) {
+        const existingProgress = prev.find((p) => p.lessonId === lessonId);
+        if (existingProgress) {
           return prev.map((p) =>
             p.lessonId === lessonId
               ? { ...p, completed: true, quizScore: score, completedAt: new Date().toISOString() }

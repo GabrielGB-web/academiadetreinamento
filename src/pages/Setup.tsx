@@ -38,11 +38,13 @@ export default function Setup() {
       toast.error('Erro ao promover para admin', {
         description: error.message,
       });
-    } else if (data) {
+    } else if (data === true) {
       setSuccess(true);
       toast.success('Você agora é administrador!');
-      // Reload to update auth context
-      setTimeout(() => window.location.href = '/admin', 1500);
+      // Full page reload to update auth context with new role
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 1500);
     } else {
       toast.error('Já existe um administrador', {
         description: 'Peça a um admin existente para promovê-lo.',
