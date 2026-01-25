@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, FileText } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { MaterialCard } from '@/components/materials/MaterialCard';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { mockMaterials } from '@/data/mockData';
+import { useMaterials } from '@/hooks/useCourses';
 import { cn } from '@/lib/utils';
-
-const categories = ['Todos', 'Negociação', 'Prospecção', 'Documentos', 'Apresentação'];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Materials() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const { data: materials, isLoading } = useMaterials();
 
-  const filteredMaterials = mockMaterials.filter((material) => {
+  // Get unique categories from materials
+  const categories = ['Todos', ...Array.from(new Set((materials || []).map(m => m.category)))];
+
+  const filteredMaterials = (materials || []).filter((material) => {
     const matchesSearch =
       material.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      material.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (material.description || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
       selectedCategory === 'Todos' || material.category === selectedCategory;
@@ -50,39 +53,68 @@ export default function Materials() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map((category) => (
-            <Button
-              key={category}
-              variant={selectedCategory === category ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory(category)}
-              className={cn(
-                selectedCategory === category && 'gradient-primary border-0'
-              )}
-            >
-              {category}
-            </Button>
+        {categories.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className={cn(
+                  selectedCategory === category && 'gradient-primary border-0'
+                )}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
           ))}
         </div>
-      </div>
+      )}
 
       {/* Materials Grid */}
-      <div className="grid sm:grid-cols-2 gap-4">
-        {filteredMaterials.map((material, index) => (
-          <div
-            key={material.id}
-            className="animate-slide-up"
-            style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-          >
-            <MaterialCard material={material} />
-          </div>
-        ))}
-      </div>
+      {!isLoading && filteredMaterials.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          {filteredMaterials.map((material, index) => (
+            <div
+              key={material.id}
+              className="animate-slide-up"
+              style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+            >
+              <MaterialCard material={{
+                id: material.id,
+                title: material.title,
+                description: material.description || '',
+                type: material.type as 'pdf' | 'video' | 'link' | 'document',
+                url: material.url,
+                category: material.category,
+              }} />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {filteredMaterials.length === 0 && (
+      {/* Empty State */}
+      {!isLoading && filteredMaterials.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhum material encontrado.</p>
+          <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-xl font-display font-semibold mb-2">
+            Nenhum material disponível
+          </h3>
+          <p className="text-muted-foreground">
+            {searchQuery || selectedCategory !== 'Todos'
+              ? 'Nenhum material encontrado com os filtros selecionados.'
+              : 'Os materiais serão adicionados em breve.'}
+          </p>
         </div>
       )}
     </MainLayout>
