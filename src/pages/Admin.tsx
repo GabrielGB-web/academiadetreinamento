@@ -9,10 +9,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { QuizManager } from '@/components/admin/QuizManager';
+import { UserManager } from '@/components/admin/UserManager';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useUsers } from '@/hooks/useUsers';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import {
@@ -65,6 +67,7 @@ export default function Admin() {
   // Queries
   const { data: courses = [], isLoading: coursesLoading } = useCourses();
   const { data: materials = [], isLoading: materialsLoading } = useMaterials();
+  const { data: users = [] } = useUsers();
 
   // Mutations
   const createCourse = useCreateCourse();
@@ -230,7 +233,7 @@ export default function Admin() {
         </div>
         <div className="p-4 rounded-xl bg-card border border-border/50">
           <Users className="w-6 h-6 text-primary mb-2" />
-          <p className="text-2xl font-bold">-</p>
+          <p className="text-2xl font-bold">{users.length}</p>
           <p className="text-sm text-muted-foreground">Usuários</p>
         </div>
       </div>
@@ -240,6 +243,7 @@ export default function Admin() {
         <TabsList className="bg-card border border-border mb-6">
           <TabsTrigger value="courses">Cursos</TabsTrigger>
           <TabsTrigger value="materials">Materiais</TabsTrigger>
+          <TabsTrigger value="users">Usuários</TabsTrigger>
         </TabsList>
 
         {/* Courses Tab */}
@@ -683,6 +687,11 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Users Tab */}
+        <TabsContent value="users">
+          <UserManager />
         </TabsContent>
       </Tabs>
     </MainLayout>
