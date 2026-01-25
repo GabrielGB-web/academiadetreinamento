@@ -5,20 +5,25 @@ import { StatsCard } from '@/components/dashboard/StatsCard';
 import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { CourseCard } from '@/components/courses/CourseCard';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockCourses } from '@/data/mockData';
+import { useCoursesWithProgress } from '@/hooks/useCoursesWithProgress';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { data: courses, isLoading } = useCoursesWithProgress();
   
-  const inProgressCourses = mockCourses.filter(
+  const inProgressCourses = (courses || []).filter(
     c => (c.progress || 0) > 0 && (c.progress || 0) < 100
   );
   
-  const completedCourses = mockCourses.filter(c => c.progress === 100);
-  const overallProgress = Math.round(
-    mockCourses.reduce((acc, c) => acc + (c.progress || 0), 0) / mockCourses.length
-  );
+  const completedCourses = (courses || []).filter(c => c.progress === 100);
+  const totalCourses = courses?.length || 0;
+  const overallProgress = totalCourses > 0 
+    ? Math.round((courses || []).reduce((acc, c) => acc + (c.progress || 0), 0) / totalCourses)
+    : 0;
+
+  const notStartedCourses = (courses || []).filter(c => (c.progress || 0) === 0);
 
   return (
     <MainLayout>
@@ -39,24 +44,22 @@ export default function Dashboard() {
           value={completedCourses.length}
           icon={<BookOpen className="w-5 h-5 text-primary-foreground" />}
           variant="primary"
-          trend={{ value: 15, isPositive: true }}
         />
         <StatsCard
           title="Pontuação Total"
           value={user?.points?.toLocaleString() || 0}
           icon={<Trophy className="w-5 h-5 text-primary-foreground" />}
           variant="success"
-          trend={{ value: 25, isPositive: true }}
         />
         <StatsCard
-          title="Sua Posição"
-          value={`#${user?.rank ?? 1}`}
+          title="Cursos Disponíveis"
+          value={totalCourses}
           icon={<Target className="w-5 h-5 text-primary-foreground" />}
           variant="accent"
         />
         <StatsCard
-          title="Sequência"
-          value="7 dias"
+          title="Em Andamento"
+          value={inProgressCourses.length}
           icon={<Flame className="w-5 h-5 text-primary-foreground" />}
           variant="default"
         />
@@ -66,8 +69,19 @@ export default function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Progress and Courses */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Loading State */}
+          {isLoading && (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-48" />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Skeleton className="h-48" />
+                <Skeleton className="h-48" />
+              </div>
+            </div>
+          )}
+
           {/* Continue Learning */}
-          {inProgressCourses.length > 0 && (
+          {!isLoading && inProgressCourses.length > 0 && (
             <div className="animate-slide-up" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-display font-semibold">
@@ -89,21 +103,33 @@ export default function Dashboard() {
           )}
 
           {/* Recommended Courses */}
-          <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-display font-semibold">
-                Recomendados para Você
-              </h2>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              {mockCourses
-                .filter(c => (c.progress || 0) === 0)
-                .slice(0, 2)
-                .map((course) => (
+          {!isLoading && notStartedCourses.length > 0 && (
+            <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-display font-semibold">
+                  Recomendados para Você
+                </h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {notStartedCourses.slice(0, 2).map((course) => (
                   <CourseCard key={course.id} course={course} />
                 ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoading && totalCourses === 0 && (
+            <div className="text-center py-12 animate-slide-up">
+              <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-display font-semibold mb-2">
+                Nenhum curso disponível
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Os cursos serão adicionados em breve. Aguarde!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}

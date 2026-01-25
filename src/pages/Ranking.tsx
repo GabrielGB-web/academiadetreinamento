@@ -1,16 +1,20 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { RankingPosition } from '@/components/ranking/RankingPosition';
-import { ProgressRing } from '@/components/dashboard/ProgressRing';
 import { Trophy, Target, Flame, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCoursesWithProgress } from '@/hooks/useCoursesWithProgress';
 
 export default function Ranking() {
   const { user } = useAuth();
+  const { data: courses } = useCoursesWithProgress();
+
+  // Calculate real stats
+  const completedCourses = (courses || []).filter(c => c.progress === 100).length;
 
   const achievements = [
-    { name: 'Primeiro Curso', icon: Star, earned: true },
-    { name: '7 dias seguidos', icon: Flame, earned: true },
-    { name: '1000 pontos', icon: Trophy, earned: true },
+    { name: 'Primeiro Curso', icon: Star, earned: completedCourses >= 1 },
+    { name: '3 Cursos', icon: Flame, earned: completedCourses >= 3 },
+    { name: '1000 pontos', icon: Trophy, earned: (user?.points || 0) >= 1000 },
     { name: 'Top 10', icon: Target, earned: false },
   ];
 
@@ -38,18 +42,18 @@ export default function Ranking() {
           <div className="grid sm:grid-cols-3 gap-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <div className="p-6 rounded-xl gradient-card shadow-card border border-border/50 text-center">
               <Trophy className="w-8 h-8 mx-auto mb-3 text-gold" />
-              <p className="text-2xl font-display font-bold">{user?.points}</p>
+              <p className="text-2xl font-display font-bold">{user?.points || 0}</p>
               <p className="text-sm text-muted-foreground">Pontos Totais</p>
             </div>
             <div className="p-6 rounded-xl gradient-card shadow-card border border-border/50 text-center">
               <Target className="w-8 h-8 mx-auto mb-3 text-primary" />
-              <p className="text-2xl font-display font-bold">85%</p>
-              <p className="text-sm text-muted-foreground">Taxa de Acerto</p>
+              <p className="text-2xl font-display font-bold">{completedCourses}</p>
+              <p className="text-sm text-muted-foreground">Cursos Concluídos</p>
             </div>
             <div className="p-6 rounded-xl gradient-card shadow-card border border-border/50 text-center">
               <Flame className="w-8 h-8 mx-auto mb-3 text-destructive" />
-              <p className="text-2xl font-display font-bold">7</p>
-              <p className="text-sm text-muted-foreground">Dias Seguidos</p>
+              <p className="text-2xl font-display font-bold">{courses?.length || 0}</p>
+              <p className="text-sm text-muted-foreground">Cursos Disponíveis</p>
             </div>
           </div>
 
